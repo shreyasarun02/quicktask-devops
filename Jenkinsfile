@@ -1,27 +1,44 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "quicktask-app"
+        CONTAINER_NAME = "quicktask-container"
+        PORT = "5000"
+    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Build Docker Image') {
             steps {
-                git 'https://github.com/shreyasarun02/quicktask-devops.git'
+                echo "Building Docker image..."
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Clone Repository') {
             steps {
-                script {
-                    sh 'docker build -t quicktask-app .'
-                }
+                git branch: 'main', url: 'https://github.com/shreyasarun02/quicktask-devops.git'
             }
         }
 
         stage('Run Docker Container') {
             steps {
-                script {
-                    sh 'docker run -d -p 5000:5000 quicktask-app'
-                }
+                echo "Stopping existing container if running..."
+                sh 'docker stop $CONTAINER_NAME || true'
+                sh 'docker rm $CONTAINER_NAME || true'
+                
+                echo "Running container..."
+                sh 'docker run -d -p $PORT:5000 --name $CONTAINER_NAME $IMAGE_NAME'
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline executed successfully!"
+        }
+        failure {
+            echo "Pipeline failed. Check the logs above."
         }
     }
 }
