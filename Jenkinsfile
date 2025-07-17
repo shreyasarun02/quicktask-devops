@@ -15,6 +15,19 @@ pipeline {
             }
         }
 
+        stage('Push to Docker Hub') {
+            steps {
+                echo 'Pushing Docker image to Docker Hub...'
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker tag $IMAGE_NAME $DOCKER_USERNAME/quicktask:latest
+                        docker push $DOCKER_USERNAME/quicktask:latest
+                    '''
+                }
+            }
+        }
+
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/shreyasarun02/quicktask-devops.git'
@@ -42,3 +55,4 @@ pipeline {
         }
     }
 }
+
